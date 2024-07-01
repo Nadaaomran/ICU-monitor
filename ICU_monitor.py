@@ -2,15 +2,15 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 import numpy as np
 import pyqtgraph as pg
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QVBoxLayout, QWidget, QMenu, QInputDialog
-from PyQt5.QtCore import  Qt, QTimer, QObject, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QVBoxLayout, QWidget, QMenu, QInputDialog, QMessageBox
+from PyQt5.QtCore import  Qt, QTimer, QObject, pyqtSignal, QRect
+from PyQt5.QtGui import QPainter, QColor
 import pandas as pd
 from pyqtgraph import PlotWidget
 import math
 import os
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from io import BytesIO
 from datetime import datetime
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Image, Spacer, Paragraph
 from reportlab.platypus.flowables import KeepTogether
@@ -67,15 +67,132 @@ class PlotUpdater(QObject):
         self.update_signal.emit(self.position)
         # increament the index 
         self.position += 1 
+        
+class Overlay(QWidget):
+    def __init__(self, side, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setStyleSheet("background-color: rgba(0, 0, 0, 150);")
+        self.side= side
+        self.animation_timer = QTimer(self)
+        self.animation_timer.setInterval(5)  
+        self.animation_timer.timeout.connect(self.updateAnimation)
+        self.opacity = 0.0
+        self.animation_step = 0.1  
+
+    def showOverlay(self):
+        if self.side == 'left':
+            geometry = QRect((self.parent().geometry().left()), (self.parent().geometry().top()), int((self.parent().geometry().width()) / 2), (self.parent().geometry().height()))
+        else:
+            geometry = QRect(int((self.parent().geometry().left())  + ((self.parent().geometry().width()) / 2)), (self.parent().geometry().top()), int((self.parent().geometry().width()) / 2), (self.parent().geometry().height()))
+        self.setGeometry(geometry)
+        self.opacity = 0.0
+        self.show()
+        self.animation_timer.start()
+
+    def resetOverlay(self):
+        self.animation_timer.stop()
+        self.opacity = 0.0
+        self.hide()
+
+    def updateAnimation(self):
+        if self.opacity >= 1.0:
+            self.animation_timer.stop()
+            self.hide()
+        else:
+            self.opacity += self.animation_step
+            self.repaint()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setOpacity(self.opacity)
+        painter.fillRect(self.rect(), QColor(0, 0, 0))
+        
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(984, 450)
         MainWindow.setAcceptDrops(False)
-        MainWindow.setStyleSheet("font: 10pt \"MS Shell Dlg 2\";")
+        MainWindow.setStyleSheet("font: 10pt \"Arial\";")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        style_sheet = """
+            QWidget {
+                font-family: Arial, sans-serif;
+                font-size: 10pt;
+            }
+            QPushButton {
+                border: 1px solid #8f8f91;
+                border-radius: 5px;
+                background-color: #e6e6e6;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #f0f0f0;
+            }
+            QPushButton:pressed {
+                background-color: #d4d4d4;
+            }
+            QComboBox {
+                border: 1px solid #8f8f91;
+                border-radius: 5px;
+                padding: 1px 18px 1px 3px;
+                min-width: 6em;
+            }
+            QComboBox:editable {
+                background: white;
+            }
+            QComboBox:!editable, QComboBox::drop-down:editable {
+                background: #e6e6e6;
+            }
+            QComboBox:!editable:on, QComboBox::drop-down:editable:on {
+                background: #f0f0f0;
+            }
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 15px;
+                border-left: none; /* Remove the border */
+            }
+            QComboBox::down-arrow {
+                width: 15px;
+                height: 15px;
+                image: url(down_arrow.png);
+            }
+            QSlider::groove:horizontal {
+                border: 1px solid #999999;
+                height: 8px;
+                background: #d4d4d4;
+                margin: 2px 0;
+                border-radius: 5px;
+            }
+            QSlider::handle:horizontal {
+                background: #8f8f91;
+                border: 1px solid #5c5c5c;
+                width: 18px;
+                margin: -2px 0;
+                border-radius: 5px;
+            }
+            QCheckBox {
+                spacing: 5px;
+            }
+            QCheckBox::indicator {
+                width: 13px;
+                height: 13px;
+                border: 1px solid #8f8f91;
+                border-radius: 3px;
+            }
+            QCheckBox::indicator:unchecked {
+                background: #e6e6e6;
+            }
+            QCheckBox::indicator:checked {
+                background: #b1b1b1; 
+            }
+        """
+        # Apply the style sheet to the entire application
+        self.centralwidget.setStyleSheet(style_sheet)
         self.gridLayout_3 = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.frame_5 = QtWidgets.QFrame(self.centralwidget)
@@ -169,7 +286,7 @@ class Ui_MainWindow(object):
         self.checkBox_link = QtWidgets.QCheckBox(self.frame_5)
         self.checkBox_link.setObjectName("checkBox_link")
         self.horizontalLayout_18.addWidget(self.checkBox_link)
-        self.verticalLayout.addSpacing(15)
+        self.verticalLayout.addSpacing(30)
         self.verticalLayout.addLayout(self.horizontalLayout_18)
         self.gridLayout_3.addWidget(self.frame_5, 0, 0, 1, 1)
         self.frame_6 = QtWidgets.QFrame(self.centralwidget)
@@ -223,7 +340,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addLayout(self.horizontalLayout_4)
         self.horizontalLayout_6 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
-        self.label_signal2 = QtWidgets.QLabel(self.frame_5)
+        self.label_signal2 = QtWidgets.QLabel(self.frame_6)
         self.label_signal2.setObjectName("label_signal2")
         self.horizontalLayout_6.addWidget(self.label_signal2)
         self.horizontalLayout_6.setStretch(0,0)
@@ -316,6 +433,8 @@ class Ui_MainWindow(object):
         self.plot_updater1.update_signal.connect(self.get_and_plot_data_in_graph1)
         self.plot_updater2 = PlotUpdater(0, 200)
         self.plot_updater2.update_signal.connect(self.get_and_plot_data_in_graph2)
+        self.overlay1 = Overlay('left', self.centralwidget)
+        self.overlay2  = Overlay('right',self.centralwidget)
         self.widget.setLabel('left', 'Amplitude')
         self.widget.setLabel('bottom', 'Time (s)')
         self.widget_2.setLabel('left', 'Amplitude')
@@ -342,16 +461,22 @@ class Ui_MainWindow(object):
         self.pushButton_2.clicked.connect(lambda: self.Move_signals(False))
         self.visability1=[]
         self.visability2=[]
-        self.checkBox_show_graph1.setCheckState(True)
-        self.checkBox_show_graph2.setCheckState(True)
         self.checkBox_show_graph1.clicked.connect(lambda: self.change_visibility(True))
         self.checkBox_show_graph2.clicked.connect(lambda: self.change_visibility(False))
+        self.checkBox_show_graph1.setCheckState(True)
+        self.checkBox_show_graph2.setCheckState(True)
         self.plot_items_graph1=[]
         self.plot_items_graph2=[]
         self.colours1=[]
         self.labels1=[]
         self.colours2=[]
         self.labels2=[]
+        self.current_directory = os.path.dirname(os.path.abspath(__file__))
+        image_files = [file for file in os.listdir(self.current_directory) if file.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        # if there was a snapshots taken from thre previous run of the program left with the script in the same folder delete them (the copy in the folder previous snapshots wont be removed)
+        for image_file in image_files:
+            snapshot_path = os.path.join(self.current_directory, image_file)
+            os.remove(snapshot_path)
         self.widget.mousePressEvent = lambda event:self.start_panning (event, True)
         self.widget.mouseMoveEvent = lambda event:self.trace_panning (event, True)
         self.widget_2.mousePressEvent = lambda event:self.start_panning (event, False)
@@ -765,87 +890,106 @@ class Ui_MainWindow(object):
     def snapshot_graph1(self, widget_1):
         pixmap = widget_1.grab()  # Capture the widget as a pixmap
         current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")  # Generate a timestamp
-        image_path = os.path.join("D:\DSP_TASKS\DSP_TASK1\REPORT1", f"snapshot_{current_datetime}.png")  # Define the path to save the image
+        image_path = os.path.join(self.current_directory, f"snapshot_{current_datetime}.png")  # Define the path to save the image
         pixmap.save(image_path, "PNG")  # Save the pixmap as PNG file
+        previous_snapshots_directory= os.path.join(self.current_directory, r"previous_snapshots")
+        pixmap.save(os.path.join(previous_snapshots_directory, f"snapshot_{current_datetime}.png"), "PNG")
         self.snapshots1.append(image_path)  # Store the image path in the snapshots list
+        self.overlay1.resetOverlay()
+        self.overlay1.showOverlay()
+        
 
     def snapshot_graph2(self, widget_2):
         pixmap = widget_2.grab()  # Capture the widget as a pixmap
         current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")  # Generate a timestamp
-        image_path = os.path.join("D:\DSP_TASKS\DSP_TASK1\REPORT1", f"snapshot_{current_datetime}.png") # Define the path to save the image
+        image_path = os.path.join(self.current_directory, f"snapshot_{current_datetime}.png") # Define the path to save the image
         pixmap.save(image_path, "PNG")  # Save the pixmap as PNG file
+        previous_snapshots_directory= os.path.join(self.current_directory, r"previous_snapshots")
+        pixmap.save(os.path.join(previous_snapshots_directory, f"snapshot_{current_datetime}.png"), "PNG")
         self.snapshots1.append(image_path)  # Store the image path in the snapshots list
+        self.overlay2.resetOverlay()
+        self.overlay2.showOverlay()
+        
 
     def make_the_report(self):
-        doc = SimpleDocTemplate("REPORT1.pdf", pagesize=letter)  # Create a PDF document
-
-        # Define the content for the PDF report
-        content = []
-
-        # Get the current date and time
-        # Add title and current date/time
-        styles = getSampleStyleSheet()
-        title_style = styles["Title"]
-        normal_style = styles["Normal"]
-
-        # Add title and current date/time
-        title = Paragraph("Multi-Port, Multi-Channel Signal Viewer", title_style)
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Get the current date and time
-        date = Paragraph(f"Date: {current_time.split()[0]}", normal_style)  # Extract the date
-        time = Paragraph(f"Time: {current_time.split()[1]}", normal_style)  # Extract the time
-        content.extend([title, Spacer(0, 50), Spacer(1, 12), date,Spacer(1,10) ,time, Spacer(1, 30)])
-        # Add a table with data statistics
-        data = [["Signal", "Mean", "Std", "Duration", "Min", "Max"]]
-        for i in range(len(self.labels1)):
-            signal_stats = [
-                self.labels1[i],
-                np.mean(self.magnitude_graph1[i]),
-                np.std(self.magnitude_graph1[i]),
-                len(self.magnitude_graph1[i]) / self.sampling_frequency,
-                np.min(self.magnitude_graph1[i]),
-                np.max(self.magnitude_graph1[i]),
-            ]
-            data.append(signal_stats)
-
-        for i in range(len(self.labels2)):
-            signal_stats = [
-                self.labels2[i],
-                np.mean(self.magnitude_graph2[i]),
-                np.std(self.magnitude_graph2[i]),
-                len(self.magnitude_graph2[i]) / self.sampling_frequency,
-                np.min(self.magnitude_graph2[i]),
-                np.max(self.magnitude_graph2[i]),
-            ]
-        data.append(signal_stats)
-        table = Table(data)
-        table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.gray),
-                                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                                ('FONTSIZE', (0, 0), (-1, 0), 12),
-                                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                                ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
-        content.append(table)
-        content.append(Spacer(1, 30))  # Add some spacing between the table and the snapshots
-        snapshot_folder="D:\DSP_TASKS\DSP_TASK1\REPORT1"
-        # Find all image files in the snapshot folder
-        image_files = [file for file in os.listdir(snapshot_folder) if file.lower().endswith(('.png', '.jpg', '.jpeg'))]
-
-
-        # Add the snapshots to the report
-        for image_file in image_files:
-            snapshot_path = os.path.join(snapshot_folder, image_file)
-            if os.path.exists(snapshot_path):  # Check if the snapshot file exists
-                image = Image(snapshot_path, width=400, height=300)  # Adjust the width and height as per your requirements
-                content.append(KeepTogether([image]))
-                content.append(Spacer(1,20))
-            else:
-                print(f"Warning: Snapshot file not found: {snapshot_path}")
-
-        # Build the PDF report
         
-        doc.build(content)
+        file_path, _ = QFileDialog.getSaveFileName(None, "Save Report", self.current_directory, "PDF Files (*.pdf)")
+        
+        # Check if the user selected a path
+        if file_path:
+            doc = SimpleDocTemplate(file_path, pagesize=letter)  # Create a PDF document
+
+            # Define the content for the PDF report
+            content = []
+
+            # Get the current date and time
+            # Add title and current date/time
+            styles = getSampleStyleSheet()
+            title_style = styles["Title"]
+            normal_style = styles["Normal"]
+
+            # Add title and current date/time
+            title = Paragraph("Multi-Port, Multi-Channel Signal Viewer", title_style)
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Get the current date and time
+            date = Paragraph(f"Date: {current_time.split()[0]}", normal_style)  # Extract the date
+            time = Paragraph(f"Time: {current_time.split()[1]}", normal_style)  # Extract the time
+            content.extend([title, Spacer(0, 50), Spacer(1, 12), date,Spacer(1,10) ,time, Spacer(1, 30)])
+            # Add a table with data statistics
+            data = [["Signal", "Mean", "Std", "Duration", "Min", "Max"]]
+            for i in range(len(self.labels1)):
+                signal_stats = [
+                    self.labels1[i] + f"(Graph 1)",
+                    np.mean(self.magnitude_graph1[i]),
+                    np.std(self.magnitude_graph1[i]),
+                    len(self.magnitude_graph1[i]) / self.sampling_frequency,
+                    np.min(self.magnitude_graph1[i]),
+                    np.max(self.magnitude_graph1[i]),
+                ]
+                data.append(signal_stats)
+
+            for i in range(len(self.labels2)):
+                signal_stats = [
+                    self.labels2[i]  + f"(Graph 2)",
+                    np.mean(self.magnitude_graph2[i]),
+                    np.std(self.magnitude_graph2[i]),
+                    len(self.magnitude_graph2[i]) / self.sampling_frequency,
+                    np.min(self.magnitude_graph2[i]),
+                    np.max(self.magnitude_graph2[i]),
+                ]
+                data.append(signal_stats)
+            table = Table(data)
+            table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.gray),
+                                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                                    ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
+            content.append(table)
+            content.append(Spacer(1, 30))  # Add some spacing between the table and the snapshots
+            snapshot_folder= self.current_directory
+            # Find all image files in the snapshot folder
+            image_files = [file for file in os.listdir(snapshot_folder) if file.lower().endswith(('.png', '.jpg', '.jpeg'))]
+
+
+            # Add the snapshots to the report
+            for image_file in image_files:
+                snapshot_path = os.path.join(snapshot_folder, image_file)
+                if os.path.exists(snapshot_path):  # Check if the snapshot file exists
+                    image = Image(snapshot_path, width=400, height=300)  # Adjust the width and height as per your requirements
+                    content.append(KeepTogether([image]))
+                    content.append(Spacer(1,20))
+                else:
+                    print(f"Warning: Snapshot file not found: {snapshot_path}")
+
+            # Build the PDF report
+            doc.build(content)
+            image_files = [file for file in os.listdir(self.current_directory) if file.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            # delete the snapshots left with the script in the same folder(the copy in the folder previous snapshots wont be removed)
+            for image_file in image_files:
+                snapshot_path = os.path.join(self.current_directory, image_file)
+                os.remove(snapshot_path)
 
 
 
