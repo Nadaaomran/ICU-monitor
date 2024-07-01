@@ -1,5 +1,5 @@
 # ICU Monitor
-![ICU Monitor Demo](https://drive.google.com/file/d/1Q4op9ljVQwKC4mgPClaRJsFqL9Dmd8iI/view?usp=sharing)
+![ICU Monitor Demo](GIF/ICU.gif)
 
 ## Overview
 Monitoring vital signals is a crucial aspect of any ICU room. This project, **ICU Monitor**, is a desktop application developed using Python and PyQt that provides a multi-port, multi-channel signal viewer. The application allows users to open and view multiple signal files with advanced features for analyzing and manipulating these signals.
