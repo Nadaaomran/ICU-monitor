@@ -29,11 +29,11 @@ Monitoring vital signals is a crucial aspect of any ICU room. This project, **IC
 ## Installation
 To install and run the ICU Monitor application, follow these steps:
 
-1. **Clone the Repository**:
+1. **Clone the Repository**
 
-2. **Install Dependencies**:
+2. **Install Dependencies**
 
-3. **Run the ICU_monitor.py File**:
+3. **Run the ICU_monitor.py File**
 
 ## Usage
 1. **Open Signal Files**: Double-click on the graph where you want to open a signal file. Use the file browser to open signal files on your PC. Each graph can load and display different signals.
