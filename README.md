@@ -41,3 +41,33 @@ To install and run the ICU Monitor application, follow these steps:
 3. **Take Snapshots:** Capture snapshots of the graphs by clicking on the snapshot button in the UI. These snapshots are saved in the previous_snapshots folder. Remember to delete unwanted snapshots to avoid wasting memory.
 4. **Link Graphs**: Click the link button to synchronize the two graphs for the same time frames and zoom levels.
 5. **Export Reports**: Take snapshots and generate PDF reports with data statistics for comprehensive analysis.
+## Contributers
+
+<table>
+  <tr>
+   <td align="center">
+      <a href="https://github.com/Nadaaomran">
+        <img src="https://avatars.githubusercontent.com/u/104179154?v=4" width="100px;" alt="Nada"/>
+        <br />
+        <sub><b>Nada Omran</b></sub>
+      </a>
+      <br />
+    </td>
+    <td align="center">
+      <a href="https://github.com/hadeerfasih">
+        <img src="https://avatars.githubusercontent.com/u/104545742?v=4" width="100px;" alt="Hadeer"/>
+        <br />
+        <sub><b>Hadeer Fasih</b></sub>
+      </a>
+      <br />
+    </td>
+   <td align="center">
+      <a href="https://github.com/Mariam-Hatem">
+        <img src="https://avatars.githubusercontent.com/u/115348754?v=4" width="100px;" alt="Mariam"/>
+        <br />
+        <sub><b>Mariam Hatem</b></sub>
+      </a>
+      <br />
+
+  </tr>
+</table>
